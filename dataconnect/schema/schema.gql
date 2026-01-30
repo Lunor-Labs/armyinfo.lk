@@ -1,0 +1,72 @@
+type User @table {
+  username: String!
+  passwordHash: String!
+  role: String!
+  createdAt: Timestamp!
+  email: String
+  lastLogin: Timestamp
+}
+
+type Soldier @table {
+  firstName: String!
+  lastName: String!
+  rank: String!
+  specialty: String!
+  serviceNumber: String!
+  createdAt: Timestamp!
+  dateOfBirth: Date
+  contactInfo: String
+  user: User
+  unit: Unit
+}
+
+type Unit @table {
+  unitName: String!
+  unitType: String!
+  commandingOfficer: Soldier!
+  createdAt: Timestamp!
+  location: String
+  description: String
+}
+
+type Equipment @table {
+  equipmentName: String!
+  serialNumber: String!
+  equipmentType: String!
+  status: String!
+  createdAt: Timestamp!
+  description: String
+  assignedToSoldier: Soldier
+  assignedToUnit: Unit
+}
+
+type Assignment @table {
+  assignmentType: String!
+  startDate: Date!
+  createdAt: Timestamp!
+  endDate: Date
+  description: String
+  location: String
+  soldier: Soldier
+  unit: Unit
+}
+
+type Training @table {
+  trainingName: String!
+  trainingType: String!
+  startDate: Date!
+  createdAt: Timestamp!
+  endDate: Date
+  description: String
+  location: String
+  instructor: Soldier
+}
+
+type SoldierTraining @table(key: ["soldier", "training"]) {
+  completionStatus: String!
+  soldier: Soldier!
+  training: Training!
+  dateCompleted: Date
+  score: Int
+  notes: String
+}

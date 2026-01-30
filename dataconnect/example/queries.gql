@@ -1,0 +1,43 @@
+mutation CreateNewTraining @auth(level: USER) {
+  training_insert(data: {
+    trainingName: "Basic Rifle Course",
+    trainingType: "Weapons Training",
+    startDate: "2024-01-15",
+    endDate: "2024-01-22",
+    location: "Fort Benning, GA",
+    description: "Introduction to the M16A4 service rifle.",
+    instructorId_expr: "auth.uid"
+  })
+}
+
+query ListAvailableUnits @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  units {
+    id
+    unitName
+    unitType
+    location
+    description
+  }
+}
+
+mutation AssignEquipmentToSoldier($equipmentId: UUID!, $soldierId: UUID!) @auth(level: USER) {
+  equipment_update(
+    key: { id: $equipmentId }
+    data: { assignedToSoldierId: $soldierId, assignedToUnitId: null }
+  )
+}
+
+query GetSoldierProfile @auth(level: USER) {
+  soldier(key: { userId_expr: "auth.uid" }) {
+    id
+    firstName
+    lastName
+    rank
+    serviceNumber
+    specialty
+    unit {
+      unitName
+      unitType
+    }
+  }
+}

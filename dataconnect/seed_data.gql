@@ -1,0 +1,60 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "This mutation is safe to expose to all logged in users.") {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      username: "demouser1",
+      passwordHash: "examplehash1",
+      role: "member",
+      createdAt: "2024-01-01T00:00:00Z",
+      email: "demouser1@example.com"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      username: "demouser2",
+      passwordHash: "examplehash2",
+      role: "member",
+      createdAt: "2024-01-01T00:00:00Z",
+      email: "demouser2@example.com"
+    }
+  ])
+  soldier_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440000",
+      firstName: "Demo",
+      lastName: "Soldier1",
+      rank: "Private",
+      serviceNumber: "SN123",
+      specialty: "Infantry",
+      createdAt: "2024-01-01T00:00:00Z",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      unitId: "770e8400-e29b-41d4-a716-446655440000"
+    },
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      firstName: "Demo",
+      lastName: "Soldier2",
+      rank: "Corporal",
+      serviceNumber: "SN456",
+      specialty: "Mechanic",
+      createdAt: "2024-01-01T00:00:00Z",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      unitId: "770e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+  unit_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440000",
+      unitName: "DemoUnit1",
+      unitType: "Infantry",
+      createdAt: "2024-01-01T00:00:00Z",
+      commandingOfficerId: "660e8400-e29b-41d4-a716-446655440000"
+    },
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      unitName: "DemoUnit2",
+      unitType: "Mechanized",
+      createdAt: "2024-01-01T00:00:00Z",
+      commandingOfficerId: "660e8400-e29b-41d4-a716-446655440001"
+    }
+  ])
+}
