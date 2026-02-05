@@ -1,41 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { getAllOfficers, getAllVehicles, getAllPublic, addRecord, updateRecord, deleteRecord } from '../services/searchService';
+import { getAllOfficers, getAllVehicles, getAllPublic, getAllUsers, addRecord, updateRecord, deleteRecord } from '../services/searchService';
 import type { SearchResult } from '../services/searchService';
 import { Header } from '../components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../App.css';
 
-const COLLECTION_MAP = {
+const COLLECTION_MAP: Record<string, string> = {
     'OFFICERS': 'officers',
     'VEHICLES': 'vehicles',
-    'PUBLIC': 'public'
+    'PUBLIC': 'public',
+    'USERS': 'users'
 };
 
-const FIELDS_MAP = {
+const FIELDS_MAP: Record<string, string[]> = {
     'OFFICERS': ['serviceNumber', 'rank', 'name', 'unit', 'status'],
     'VEHICLES': ['plateNumber', 'type', 'owner', 'chassisNumber', 'status'],
-    'PUBLIC': ['nic', 'name', 'address', 'phone', 'records']
+    'PUBLIC': ['nic', 'name', 'address', 'phone', 'records'],
+    'USERS': ['photoURL', 'email', 'fullName', 'serviceNumber', 'role', 'createdAt']
 };
 
 export const AdminDashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'OFFICERS' | 'VEHICLES' | 'PUBLIC'>('OFFICERS');
+    const [activeTab, setActiveTab] = useState<'OFFICERS' | 'VEHICLES' | 'PUBLIC' | 'USERS'>('OFFICERS');
     const [data, setData] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<SearchResult | null>(null);
-    const [formData, setFormData] = useState<any>({});
+    const [formData, setFormData] = useState<Partial<SearchResult>>({});
 
     useEffect(() => {
         fetchData(activeTab);
     }, [activeTab]);
 
-    const fetchData = async (tab: 'OFFICERS' | 'VEHICLES' | 'PUBLIC') => {
+    const fetchData = async (tab: 'OFFICERS' | 'VEHICLES' | 'PUBLIC' | 'USERS') => {
         setLoading(true);
         try {
             let result: SearchResult[] = [];
             if (tab === 'OFFICERS') result = await getAllOfficers();
             else if (tab === 'VEHICLES') result = await getAllVehicles();
             else if (tab === 'PUBLIC') result = await getAllPublic();
+            else if (tab === 'USERS') result = await getAllUsers();
             setData(result);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -59,7 +62,8 @@ export const AdminDashboard: React.FC = () => {
     const handleDeleteClick = async (id: string) => {
         if (window.confirm("Are you sure you want to delete this record? This action is irreversible.")) {
             try {
-                await deleteRecord(COLLECTION_MAP[activeTab], id);
+                const collectionName = COLLECTION_MAP[activeTab];
+                await deleteRecord(collectionName, id);
                 fetchData(activeTab);
             } catch (error) {
                 alert("Error deleting record");
@@ -70,21 +74,37 @@ export const AdminDashboard: React.FC = () => {
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const collectionName = COLLECTION_MAP[activeTab];
+
+            // Normalize data: ensure critical fields are uppercase and trimmed
+            const normalizedData = { ...formData };
+            const criticalFields = ['serviceNumber', 'plateNumber', 'nic'];
+
+            criticalFields.forEach(field => {
+                if (normalizedData[field] && typeof normalizedData[field] === 'string') {
+                    normalizedData[field] = normalizedData[field].trim().toUpperCase();
+                }
+            });
+
             if (editingItem) {
-                const { id, ...updateData } = formData;
-                await updateRecord(COLLECTION_MAP[activeTab], editingItem.id, updateData);
+                const { id, ...updateData } = normalizedData;
+                await updateRecord(collectionName, editingItem.id, updateData);
             } else {
-                await addRecord(COLLECTION_MAP[activeTab], formData);
+                await addRecord(collectionName, normalizedData);
             }
             setIsModalOpen(false);
             fetchData(activeTab);
         } catch (error) {
+            console.error("Error saving record:", error);
             alert("Error saving record");
         }
     };
 
     const handleInputChange = (field: string, value: string) => {
-        setFormData({ ...formData, [field]: value });
+        // Live feedback: uppercase critical fields as the user types
+        const criticalFields = ['serviceNumber', 'plateNumber', 'nic'];
+        const finalValue = criticalFields.includes(field) ? value.toUpperCase() : value;
+        setFormData({ ...formData, [field]: finalValue });
     };
 
     return (
@@ -133,8 +153,8 @@ export const AdminDashboard: React.FC = () => {
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-                    {['OFFICERS', 'VEHICLES', 'PUBLIC'].map((tab) => (
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '10px' }}>
+                    {['OFFICERS', 'VEHICLES', 'PUBLIC', 'USERS'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -178,7 +198,19 @@ export const AdminDashboard: React.FC = () => {
                                     {data.map((item) => (
                                         <tr key={item.id} style={{ borderBottom: '1px solid #333', transition: 'background 0.2s' }} className="table-row-hover">
                                             {FIELDS_MAP[activeTab].map(field => (
-                                                <td key={field} style={{ padding: '12px', fontSize: '0.9rem' }}>{item[field] || 'N/A'}</td>
+                                                <td key={field} style={{ padding: '12px', fontSize: '0.9rem' }}>
+                                                    {field === 'photoURL' && item[field] ? (
+                                                        <img
+                                                            src={String(item[field])}
+                                                            alt="Profile"
+                                                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #FFD700' }}
+                                                        />
+                                                    ) : field === 'photoURL' ? (
+                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#333', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.6rem' }}>NO IMG</div>
+                                                    ) : (
+                                                        String(item[field] || 'N/A')
+                                                    )}
+                                                </td>
                                             ))}
                                             <td style={{ padding: '12px', textAlign: 'right' }}>
                                                 <button onClick={() => handleEditClick(item)} style={{ background: 'transparent', border: '1px solid #00ff00', color: '#00ff00', padding: '4px 8px', marginRight: '8px', cursor: 'pointer', fontSize: '0.7rem', fontFamily: 'Orbitron' }}>EDIT</button>

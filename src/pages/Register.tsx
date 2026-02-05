@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase/config';
+import { auth, db, storage } from '../firebase/config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion } from 'framer-motion';
 import '../App.css';
 
@@ -14,6 +15,8 @@ export const Register: React.FC = () => {
     const [serviceNumber, setServiceNumber] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +27,18 @@ export const Register: React.FC = () => {
 
         setError('');
         setLoading(true);
+        let photoURL = '';
 
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Upload photo if selected
+            if (imageFile) {
+                const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
+                await uploadBytes(storageRef, imageFile);
+                photoURL = await getDownloadURL(storageRef);
+            }
 
             // Create user document in Firestore
             const role = email === 'admin@army.lk' ? 'admin' : 'soldier';
@@ -37,15 +48,25 @@ export const Register: React.FC = () => {
                 fullName,
                 serviceNumber,
                 role,
+                photoURL,
                 createdAt: new Date().toISOString()
             });
 
             navigate('/');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || 'Failed to create an account.');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to create an account.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
         }
     };
 
@@ -111,6 +132,37 @@ export const Register: React.FC = () => {
                             required
                             className="auth-input"
                         />
+                    </div>
+                    <div className="form-group">
+                        <label>Profile Photo</label>
+                        <div className="photo-upload-container" style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px',
+                            border: '1px dashed #FFD700',
+                            borderRadius: '4px',
+                            background: 'rgba(255,215,0,0.05)'
+                        }}>
+                            {imagePreview ? (
+                                <img src={imagePreview} alt="Preview" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #FFD700' }} />
+                            ) : (
+                                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#FFD700' }}>
+                                    NO PHOTO
+                                </div>
+                            )}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                                id="photo-upload"
+                            />
+                            <label htmlFor="photo-upload" className="auth-link" style={{ cursor: 'pointer', fontSize: '0.9rem' }}>
+                                SELECT PHOTO
+                            </label>
+                        </div>
                     </div>
                     <button type="submit" disabled={loading} className="auth-button">
                         {loading ? 'REGISTERING...' : 'REGISTER'}

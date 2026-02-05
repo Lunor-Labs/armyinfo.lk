@@ -1,0 +1,20 @@
+﻿
+C:\Users\Nipun\Desktop\Milatary\armyinfo.lk\src\context\AuthContext.tsx
+  16:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Nipun\Desktop\Milatary\armyinfo.lk\src\dataconnect-generated\react\index.d.ts
+  3:10  error  'UseQueryResult' is defined but never used     @typescript-eslint/no-unused-vars
+  3:26  error  'UseMutationResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nipun\Desktop\Milatary\armyinfo.lk\src\pages\AdminDashboard.tsx
+   68:22  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+   79:25  error  'id' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   86:18  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  145:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Nipun\Desktop\Milatary\armyinfo.lk\src\services\searchService.ts
+  6:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 8 problems (8 errors, 0 warnings)
+
+

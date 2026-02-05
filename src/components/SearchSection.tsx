@@ -14,7 +14,14 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ label, onSearch, i
     const [isFocused, setIsFocused] = useState(false);
 
     const handleSearch = () => {
-        onSearch(query);
+        if (!query.trim()) return;
+        onSearch(query.trim());
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !isLoading) {
+            handleSearch();
+        }
     };
 
     return (
@@ -39,18 +46,23 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ label, onSearch, i
                     type="text"
                     className="search-input"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => setQuery(e.target.value.toUpperCase())}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
+                    onKeyDown={handleKeyPress}
                     placeholder="ENTER DETAILS..."
+                    disabled={isLoading}
                 />
                 <motion.button
                     className="search-button"
                     onClick={handleSearch}
-                    disabled={isLoading}
-                    whileHover={isLoading ? {} : { scale: 1.02 }}
-                    whileTap={isLoading ? {} : { scale: 0.98 }}
-                    style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+                    disabled={isLoading || !query.trim()}
+                    whileHover={isLoading || !query.trim() ? {} : { scale: 1.02 }}
+                    whileTap={isLoading || !query.trim() ? {} : { scale: 0.98 }}
+                    style={{
+                        opacity: (isLoading || !query.trim()) ? 0.5 : 1,
+                        cursor: (isLoading || !query.trim()) ? 'not-allowed' : 'pointer'
+                    }}
                 >
                     {isLoading ? 'Scanning...' : 'SEARCH'}
                 </motion.button>
