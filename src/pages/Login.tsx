@@ -27,7 +27,7 @@ export const Login: React.FC = () => {
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
             navigate('/');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             setError('Failed to login. Please check your credentials.');
         } finally {

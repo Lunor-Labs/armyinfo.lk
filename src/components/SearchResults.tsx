@@ -10,8 +10,6 @@ interface SearchResultsProps {
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({ results, category, onClose }) => {
-    if (results.length === 0) return null;
-
     return (
         <motion.div
             className="results-overlay"
@@ -30,22 +28,30 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results, category,
                 </div>
 
                 <div className="results-list">
-                    {results.map((result, index) => (
-                        <div key={result.id} className="result-item">
-                            <div className="result-index">#{index + 1}</div>
-                            <div className="result-details">
-                                {Object.entries(result).map(([key, value]) => {
-                                    if (key === 'id') return null;
-                                    return (
-                                        <div key={key} className="result-field">
-                                            <span className="field-label">{key.toUpperCase()}:</span>
-                                            <span className="field-value">{String(value)}</span>
-                                        </div>
-                                    );
-                                })}
+                    {results.length > 0 ? (
+                        results.map((result, index) => (
+                            <div key={result.id} className="result-item">
+                                <div className="result-index">#{index + 1}</div>
+                                <div className="result-details">
+                                    {Object.entries(result).map(([key, value]) => {
+                                        if (key === 'id') return null;
+                                        return (
+                                            <div key={key} className="result-field">
+                                                <span className="field-label">{key.toUpperCase()}:</span>
+                                                <span className="field-value">{String(value)}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="no-results">
+                            <i className="fas fa-exclamation-triangle" style={{ fontSize: '2rem', color: '#FFD700', marginBottom: '1rem' }}></i>
+                            <p style={{ color: '#FFD700', fontFamily: 'Orbitron' }}>NO CLASSIFIED RECORDS MATCHED THE QUERY</p>
+                            <p style={{ color: '#888', fontSize: '0.9rem' }}>Check query uppercase format and case sensitivity.</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </motion.div>
         </motion.div>

@@ -20,14 +20,14 @@ export function SearchPage() {
     const navigate = useNavigate();
 
     const handleSearch = async (section: string, query: string) => {
-        console.log(`Searching in ${section}: ${query}`);
+        const startTime = Date.now();
+        console.log(`[SearchPage] Triggered ${section} search for query: "${query}"`);
         setIsSearching(true);
         setCurrentCategory(section);
+        setShowResults(false); // Reset view before new search
 
         try {
             let data: SearchResult[] = [];
-            // Admin bypass or enhancement could go here. 
-            // For now, we assume ALL users search, but Admin might see MORE details if we had backend filtering.
 
             if (section === 'OFFICERS') {
                 data = await searchOfficers(query);
@@ -37,11 +37,14 @@ export function SearchPage() {
                 data = await searchPublic(query);
             }
 
+            const duration = Date.now() - startTime;
+            console.log(`[SearchPage] ${section} Search completed in ${duration}ms. Results: ${data.length}`);
+
             setResults(data);
             setShowResults(true);
-        } catch (error) {
-            console.error("Search failed:", error);
-            alert("Search failed. Check console for details.");
+        } catch (error: any) {
+            console.error(`[SearchPage] ${section} search failed:`, error);
+            alert(`Search Failed: ${error.message || 'Unknown error'}. See console for details.`);
         } finally {
             setIsSearching(false);
         }
