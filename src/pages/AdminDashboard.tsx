@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getAllOfficers, getAllVehicles, getAllPublic, getAllUsers, addRecord, updateRecord, deleteRecord } from '../services/searchService';
+import { uploadSoldierImage } from '../services/imageService';
 import type { SearchResult } from '../services/searchService';
 import { Header } from '../components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,7 +14,7 @@ const COLLECTION_MAP: Record<string, string> = {
 };
 
 const FIELDS_MAP: Record<string, string[]> = {
-    'OFFICERS': ['serviceNumber', 'rank', 'name', 'unit', 'status'],
+    'OFFICERS': ['photoURL', 'serviceNumber', 'rank', 'name', 'unit', 'status'],
     'VEHICLES': ['plateNumber', 'type', 'owner', 'chassisNumber', 'status'],
     'PUBLIC': ['nic', 'name', 'address', 'phone', 'records'],
     'USERS': ['photoURL', 'email', 'fullName', 'serviceNumber', 'role', 'createdAt']
@@ -26,6 +27,8 @@ export const AdminDashboard: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<SearchResult | null>(null);
     const [formData, setFormData] = useState<Partial<SearchResult>>({});
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         fetchData(activeTab);
@@ -86,6 +89,13 @@ export const AdminDashboard: React.FC = () => {
                 }
             });
 
+            // Only allow image upload for OFFICERS and USERS
+            let photoURL = normalizedData.photoURL;
+            if ((activeTab === 'OFFICERS' || activeTab === 'USERS') && imageFile && normalizedData.serviceNumber) {
+                photoURL = await uploadSoldierImage(imageFile, String(normalizedData.serviceNumber));
+                normalizedData.photoURL = photoURL;
+            }
+
             if (editingItem) {
                 const { id, ...updateData } = normalizedData;
                 await updateRecord(collectionName, editingItem.id, updateData);
@@ -93,6 +103,8 @@ export const AdminDashboard: React.FC = () => {
                 await addRecord(collectionName, normalizedData);
             }
             setIsModalOpen(false);
+            setImageFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             fetchData(activeTab);
         } catch (error) {
             console.error("Error saving record:", error);
@@ -263,15 +275,40 @@ export const AdminDashboard: React.FC = () => {
                                 </h3>
                                 <form onSubmit={handleFormSubmit}>
                                     {FIELDS_MAP[activeTab].map(field => (
-                                        <div key={field} style={{ marginBottom: '15px' }}>
+                                        (field === 'photoURL' && (activeTab === 'OFFICERS' || activeTab === 'USERS')) ? null : (
+                                            <div key={field} style={{ marginBottom: '15px' }}>
+                                                <label style={{ color: '#FFD700', display: 'block', marginBottom: '5px', fontSize: '0.8rem', fontFamily: 'Orbitron' }}>
+                                                    {field.toUpperCase()}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData[field] || ''}
+                                                    onChange={(e) => handleInputChange(field, e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid #444',
+                                                        color: '#fff',
+                                                        padding: '10px',
+                                                        borderRadius: '4px',
+                                                        fontFamily: 'monospace'
+                                                    }}
+                                                />
+                                            </div>
+                                        )
+                                    ))}
+                                    {/* Image upload for OFFICERS and USERS */}
+                                    {(activeTab === 'OFFICERS' || activeTab === 'USERS') && (
+                                        <div style={{ marginBottom: '15px' }}>
                                             <label style={{ color: '#FFD700', display: 'block', marginBottom: '5px', fontSize: '0.8rem', fontFamily: 'Orbitron' }}>
-                                                {field.toUpperCase()}
+                                                IMAGE (optional)
                                             </label>
                                             <input
-                                                type="text"
-                                                required
-                                                value={formData[field] || ''}
-                                                onChange={(e) => handleInputChange(field, e.target.value)}
+                                                type="file"
+                                                accept="image/*"
+                                                ref={fileInputRef}
+                                                onChange={e => setImageFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
                                                 style={{
                                                     width: '100%',
                                                     background: 'rgba(255,255,255,0.05)',
@@ -282,8 +319,13 @@ export const AdminDashboard: React.FC = () => {
                                                     fontFamily: 'monospace'
                                                 }}
                                             />
+                                            {imageFile && (
+                                                <div style={{ marginTop: '8px', color: '#FFD700', fontSize: '0.8rem' }}>
+                                                    Selected: {imageFile.name}
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    )}
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                         <button
                                             type="submit"
